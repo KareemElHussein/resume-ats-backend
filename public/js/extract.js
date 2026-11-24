@@ -23,7 +23,8 @@ async function readPdf(data) {
   const pdfjs = await import('../vendor/pdf.min.js');
   pdfjs.GlobalWorkerOptions.workerSrc = new URL('../vendor/pdf.worker.min.js', import.meta.url).href;
 
-  const pdf = await pdfjs.getDocument({ data: new Uint8Array(data) }).promise;
+  const task = pdfjs.getDocument({ data: new Uint8Array(data) });
+  const pdf = await task.promise;
   try {
     const pages = [];
     for (let n = 1; n <= pdf.numPages; n++) {
@@ -33,7 +34,13 @@ async function readPdf(data) {
     }
     return pages.join('\n\n');
   } finally {
-    await pdf.destroy();
+    // Frees the PDF worker. pdf.js 6 has destroy() on the loading task, not on the document.
+    // Cleanup failing must not lose text that was already read.
+    try {
+      await task.destroy();
+    } catch (err) {
+      console.warn('pdf.js cleanup failed', err);
+    }
   }
 }
 
