@@ -1,0 +1,7 @@
+Use with: Mostafa_Ahmed.txt (score 54)
+
+Job title: Marketing Data Analyst
+Company: Contoso Media
+
+Job description:
+Contoso Media is looking for a Marketing Data Analyst to measure the performance of our digital campaigns. You will track reach and engagement in Google Analytics, write SQL queries against our campaign database, and clean data in Python and Excel. You will build Power BI or Tableau dashboards for the marketing team and use basic statistics to compare campaign results. Strong communication skills and an interest in social media are important.

@@ -1,0 +1,7 @@
+Use with: Youssef_Khaled.txt (score 41)
+
+Job title: Graduate Data Analyst
+Company: Fabrikam Retail
+
+Job description:
+Fabrikam Retail's graduate program is hiring a Graduate Data Analyst. You will help store and supply teams make decisions by turning sales data into clear reports. Day to day you will write SQL queries, analyze data in Python, and create data visualizations in Power BI. You should be comfortable with statistics and Microsoft Excel. Experience with Git is a bonus. Recent graduates with internship or volunteering experience are encouraged to apply.

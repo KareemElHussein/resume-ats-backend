@@ -41,6 +41,7 @@ export const api = {
   me: () => request('/auth/me'),
 
   listResumes: () => request('/resumes'),
+  getResume: (resumeId) => request(`/resumes/${id(resumeId)}`),
   createResume: (data) => post('/resumes', data),
   deleteResume: (resumeId) => request(`/resumes/${id(resumeId)}`, { method: 'DELETE' }),
 

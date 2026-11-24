@@ -5,7 +5,8 @@
   "scripts": {
     "build": "node scripts/copy-vendor.js",
     "predev": "node scripts/copy-vendor.js",
-    "dev": "node --watch --env-file=.env.local dev-server.js"
+    "dev": "node --watch --env-file=.env.local dev-server.js",
+    "samples": "node scripts/make-sample-pdfs.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

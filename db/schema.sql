@@ -1,74 +1,101 @@
--- ResumeMatch database tables. Run once in Supabase > SQL Editor.
--- Safe to run again: tables and indexes that already exist are left unchanged.
+-- ResumeMatch: the full database schema, for setting up a NEW, empty database.
+-- Run it once in Supabase > SQL Editor.
+--
+-- It is the live schema (supabase-export-before-001.sql) with migrations/001 applied, and it uses
+-- the same constraint and index names, so later migrations work on both kinds of database.
+-- For the existing database, run the files in migrations/ instead, in order.
 
-create table if not exists public.users (
-  id            uuid primary key default gen_random_uuid(),
-  email         text not null,
-  password_hash text not null,
-  role          text not null default 'job_seeker' check (role in ('job_seeker', 'admin')),
-  created_at    timestamptz not null default now()
+BEGIN;
+
+CREATE TABLE public.users (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  email text NOT NULL UNIQUE,
+  password_hash text NOT NULL,
+  role text NOT NULL DEFAULT 'job_seeker'::text CHECK (role = ANY (ARRAY['job_seeker'::text, 'admin'::text])),
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT users_pkey PRIMARY KEY (id),
+  -- bcrypt hashes are 60 characters; rejects passwords stored as plain text
+  CONSTRAINT users_password_hash_not_plain CHECK (char_length(password_hash) >= 50)
 );
--- Emails are stored lowercase; login looks them up with lower(email).
-create unique index if not exists users_email_key on public.users (lower(email));
+-- Email is unique ignoring upper/lower case.
+CREATE UNIQUE INDEX users_email_lower_key ON public.users (lower(email));
 
-create table if not exists public.resumes (
-  id           uuid primary key default gen_random_uuid(),
-  user_id      uuid not null references public.users (id) on delete cascade,
-  title        text not null,
-  content_text text not null,
-  file_url     text,
-  created_at   timestamptz not null default now()
+CREATE TABLE public.resumes (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  title text NOT NULL,
+  file_url text,
+  content_text text NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT resumes_pkey PRIMARY KEY (id),
+  CONSTRAINT resumes_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE
 );
-create index if not exists resumes_user_created_idx on public.resumes (user_id, created_at desc);
 
-create table if not exists public.job_descriptions (
-  id               uuid primary key default gen_random_uuid(),
-  user_id          uuid not null references public.users (id) on delete cascade,
-  job_title        text not null,
-  company          text,
-  description_text text not null,
-  created_at       timestamptz not null default now()
+CREATE TABLE public.job_descriptions (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  job_title text NOT NULL,
+  company text,
+  description_text text NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT job_descriptions_pkey PRIMARY KEY (id),
+  CONSTRAINT job_descriptions_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE
 );
-create index if not exists job_descriptions_user_created_idx on public.job_descriptions (user_id, created_at desc);
 
--- Deleting a resume or a job description also deletes its analyses.
-create table if not exists public.analyses (
-  id                 uuid primary key default gen_random_uuid(),
-  user_id            uuid not null references public.users (id) on delete cascade,
-  resume_id          uuid not null references public.resumes (id) on delete cascade,
-  job_description_id uuid not null references public.job_descriptions (id) on delete cascade,
-  status             text not null default 'pending' check (status in ('pending', 'completed', 'failed')),
-  match_score        numeric(5, 2) check (match_score between 0 and 100),
-  created_at         timestamptz not null default now()
+-- Deleting a user, resume or job description also deletes its analyses.
+CREATE TABLE public.analyses (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  resume_id uuid NOT NULL,
+  job_description_id uuid NOT NULL,
+  status text NOT NULL DEFAULT 'pending'::text CHECK (status = ANY (ARRAY['pending'::text, 'completed'::text, 'failed'::text])),
+  match_score numeric CHECK (match_score IS NULL OR match_score >= 0::numeric AND match_score <= 100::numeric),
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT analyses_pkey PRIMARY KEY (id),
+  CONSTRAINT analyses_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE,
+  CONSTRAINT analyses_resume_id_fkey FOREIGN KEY (resume_id) REFERENCES public.resumes(id) ON DELETE CASCADE,
+  CONSTRAINT analyses_job_description_id_fkey FOREIGN KEY (job_description_id) REFERENCES public.job_descriptions(id) ON DELETE CASCADE,
+  CONSTRAINT analyses_completed_has_score CHECK (status <> 'completed' OR match_score IS NOT NULL)
 );
-create index if not exists analyses_user_created_idx on public.analyses (user_id, created_at desc);
-create index if not exists analyses_resume_created_idx on public.analyses (resume_id, created_at desc);
 
-create table if not exists public.keyword_gaps (
-  id          uuid primary key default gen_random_uuid(),
-  analysis_id uuid not null references public.analyses (id) on delete cascade,
-  keyword     text not null,
-  category    text not null check (category in ('skill', 'tool', 'qualification', 'other')),
-  importance  int  not null check (importance between 1 and 5)
+CREATE TABLE public.keyword_gaps (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  analysis_id uuid NOT NULL,
+  keyword text NOT NULL,
+  category text NOT NULL DEFAULT 'other'::text CHECK (category = ANY (ARRAY['skill'::text, 'tool'::text, 'qualification'::text, 'other'::text])),
+  importance integer NOT NULL DEFAULT 3 CHECK (importance >= 1 AND importance <= 5),
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT keyword_gaps_pkey PRIMARY KEY (id),
+  CONSTRAINT keyword_gaps_analysis_id_fkey FOREIGN KEY (analysis_id) REFERENCES public.analyses(id) ON DELETE CASCADE
 );
-create index if not exists keyword_gaps_analysis_idx on public.keyword_gaps (analysis_id);
 
-create table if not exists public.rewrite_suggestions (
-  id             uuid primary key default gen_random_uuid(),
-  analysis_id    uuid not null references public.analyses (id) on delete cascade,
-  section        text not null check (section in ('summary', 'experience', 'skills', 'education')),
-  original_text  text not null,
-  suggested_text text not null,
-  created_at     timestamptz not null default now()
+CREATE TABLE public.rewrite_suggestions (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  analysis_id uuid NOT NULL,
+  section text NOT NULL CHECK (section = ANY (ARRAY['summary'::text, 'experience'::text, 'skills'::text, 'education'::text])),
+  original_text text NOT NULL,
+  suggested_text text NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT rewrite_suggestions_pkey PRIMARY KEY (id),
+  CONSTRAINT rewrite_suggestions_analysis_id_fkey FOREIGN KEY (analysis_id) REFERENCES public.analyses(id) ON DELETE CASCADE
 );
-create index if not exists rewrite_suggestions_analysis_idx on public.rewrite_suggestions (analysis_id);
 
--- Supabase also exposes the public schema through its REST API. With row level security on and
--- no policies, that API can't read these tables. The app is unaffected: it connects as the
--- database owner through DATABASE_URL, which bypasses row level security.
-alter table public.users               enable row level security;
-alter table public.resumes             enable row level security;
-alter table public.job_descriptions    enable row level security;
-alter table public.analyses            enable row level security;
-alter table public.keyword_gaps        enable row level security;
-alter table public.rewrite_suggestions enable row level security;
+-- Postgres does not index foreign keys on its own; these keep the pages fast.
+CREATE INDEX idx_resumes_user_id ON public.resumes (user_id);
+CREATE INDEX idx_job_descriptions_user_id ON public.job_descriptions (user_id);
+CREATE INDEX idx_analyses_user_id ON public.analyses (user_id);
+CREATE INDEX idx_analyses_resume_latest ON public.analyses (resume_id, created_at DESC);
+CREATE INDEX idx_analyses_job_description_id ON public.analyses (job_description_id);
+CREATE INDEX idx_keyword_gaps_analysis_id ON public.keyword_gaps (analysis_id);
+CREATE INDEX idx_rewrite_suggestions_analysis_id ON public.rewrite_suggestions (analysis_id);
+
+-- Row level security with no policies: Supabase's public REST API cannot read these tables.
+-- The app is unaffected: it connects through DATABASE_URL as the table owner, which bypasses it.
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.resumes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.job_descriptions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.analyses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.keyword_gaps ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.rewrite_suggestions ENABLE ROW LEVEL SECURITY;
+
+COMMIT;

@@ -2,12 +2,12 @@
 // results.html[?resume_id=...] the list of past analyses, newest first
 import { api } from './api.js';
 import { requireUser, showPageError, el, formatDate, plural } from './common.js';
+import { suggestionsWithPreview } from './updated-resume.js';
 
 const main = document.getElementById('main');
 const params = new URLSearchParams(location.search);
 
 const CATEGORY = { skill: 'Skill', tool: 'Tool', qualification: 'Qualification', other: 'Other' };
-const SECTION = { summary: 'Summary', experience: 'Experience', skills: 'Skills', education: 'Education' };
 
 const uploadLink = (resumeId) => `upload.html?resume_id=${encodeURIComponent(resumeId)}`;
 const statusBadge = (status) => el('span', { class: status === 'completed' ? 'badge' : 'badge miss', text: status });
@@ -19,14 +19,15 @@ function show(title, ...nodes) {
 
 // ---- One analysis ----
 
-function renderAnalysis(a) {
+// resume: { content_text } or { error } when it couldn't be loaded; only used for completed analyses.
+function renderAnalysis(a, resume) {
   show(a.job_title,
     el('div', { class: 'meta lead' },
       a.company && el('span', { text: a.company }),
       el('span', { text: a.resume_title }),
       el('span', { text: formatDate(a.created_at) }),
       statusBadge(a.status)),
-    ...(a.status === 'completed' ? completedSections(a) : [unfinishedCard(a)]),
+    ...(a.status === 'completed' ? completedSections(a, resume) : [unfinishedCard(a)]),
     el('div', { class: 'actions' },
       el('a', { class: 'btn', href: uploadLink(a.resume_id), text: 'Run another analysis' }),
       el('a', { class: 'btn ghost', href: 'results.html', text: 'All results' })));
@@ -39,7 +40,7 @@ function unfinishedCard(a) {
   return el('div', { class: 'card' }, el('p', { class: 'flush', text: message }));
 }
 
-function completedSections(a) {
+function completedSections(a, resume) {
   const score = Math.round(a.match_score);
   const gaps = a.keyword_gaps;
   const suggestions = a.rewrite_suggestions;
@@ -68,7 +69,12 @@ function completedSections(a) {
     ...(suggestions.length
       ? [
         el('p', { class: 'muted', text: 'Only use a suggestion if it is true for you, and replace any numbers with your real ones.' }),
-        ...suggestions.map(suggestionCard),
+        ...suggestionsWithPreview({
+          suggestions,
+          resumeText: resume?.content_text ?? null,
+          resumeName: a.resume_title,
+          loadError: resume?.error,
+        }),
       ]
       : [el('div', { class: 'card' }, el('p', { class: 'flush', text: 'No rewrites suggested for this job.' }))]),
   ];
@@ -87,29 +93,6 @@ function keywordTable(gaps) {
       el('td', { class: 'dots' },
         el('span', { 'aria-hidden': 'true', text: dots(g.importance) }),
         el('span', { class: 'sr-only', text: `${g.importance} of 5` }))))));
-}
-
-function suggestionCard(s) {
-  const button = el('button', { type: 'button', class: 'btn ghost', text: 'Copy suggested text' });
-  const status = el('span', { class: 'muted', role: 'status' });
-  let timer;
-  button.addEventListener('click', async () => {
-    try {
-      await navigator.clipboard.writeText(s.suggested_text);
-      status.textContent = 'Copied.';
-    } catch {
-      status.textContent = 'Could not copy. Select the text and copy it instead.';
-    }
-    clearTimeout(timer);
-    timer = setTimeout(() => { status.textContent = ''; }, 4000);
-  });
-
-  return el('div', { class: 'card' },
-    el('h3', { text: SECTION[s.section] ?? s.section }),
-    el('div', { class: 'cmp' },
-      el('div', {}, el('small', { text: 'Original' }), s.original_text),
-      el('div', { class: 'new' }, el('small', { text: 'Suggested' }), s.suggested_text)),
-    el('div', { class: 'actions tight' }, button, status));
 }
 
 // ---- History ----
@@ -150,12 +133,25 @@ function renderNotFound() {
     el('div', { class: 'actions' }, el('a', { class: 'btn', href: 'results.html', text: 'All results' })));
 }
 
+// The resume's full text, for the "updated resume" preview. A failure here shouldn't hide the results.
+async function loadResume(resumeId) {
+  try {
+    return (await api.getResume(resumeId)).resume;
+  } catch (err) {
+    return { error: err.message };
+  }
+}
+
 async function run() {
   try {
     await requireUser();
     const id = params.get('id');
-    if (id) renderAnalysis((await api.getAnalysis(id)).analysis);
-    else renderHistory((await api.listAnalyses(params.get('resume_id'))).analyses);
+    if (id) {
+      const { analysis } = await api.getAnalysis(id);
+      renderAnalysis(analysis, analysis.status === 'completed' ? await loadResume(analysis.resume_id) : null);
+    } else {
+      renderHistory((await api.listAnalyses(params.get('resume_id'))).analyses);
+    }
   } catch (err) {
     if (err.status === 404 || err.status === 400) renderNotFound();
     else {

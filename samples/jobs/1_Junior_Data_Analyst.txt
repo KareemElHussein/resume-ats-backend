@@ -1,0 +1,7 @@
+Use with: Nour_Hassan.txt (score 67)
+
+Job title: Junior Data Analyst
+Company: Northwind Analytics
+
+Job description:
+We are hiring a Junior Data Analyst to join our reporting team. You will build weekly reports and dashboards, write SQL queries to pull data, and analyze results in Python and Excel. You will present findings to stakeholders across sales and operations. Experience with Power BI or Tableau is a strong plus, and familiarity with A/B testing and Git is welcome. A degree in computer science, statistics or a related field is preferred.

@@ -1,0 +1,57 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+6 0 obj
+<< /Length 889 >>
+stream
+BT /F2 20 Tf 56 772.0 Td (Nour Hassan) Tj ET
+0.35 g
+BT /F1 10.5 Tf 56 754.0 Td (nour.hassan@example.com) Tj ET
+0 g
+BT /F2 12.5 Tf 56 724.0 Td (Summary) Tj ET
+0.7 G 0.6 w 56 719.0 m 539 719.0 l S
+BT /F1 10.5 Tf 56 704.0 Td (Computer science graduate looking for a data job.) Tj ET
+BT /F2 12.5 Tf 56 667.0 Td (Education) Tj ET
+0.7 G 0.6 w 56 662.0 m 539 662.0 l S
+BT /F1 10.5 Tf 56 647.0 Td (BSc Computer Science, 2026) Tj ET
+BT /F2 12.5 Tf 56 610.0 Td (Experience) Tj ET
+0.7 G 0.6 w 56 605.0 m 539 605.0 l S
+BT /F1 10.5 Tf 56 590.0 Td (Data Intern, 6 months) Tj ET
+BT /F1 10.5 Tf 56 575.0 Td (Made weekly sales reports for the team.) Tj ET
+BT /F1 10.5 Tf 56 560.0 Td (Wrote SQL queries to pull monthly sales figures.) Tj ET
+BT /F1 10.5 Tf 56 545.0 Td (Wrote a Python script that cleaned 12,000 rows of customer data.) Tj ET
+BT /F1 10.5 Tf 56 524.0 Td (Skills: Python, SQL, Excel, Git) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Title (Nour Hassan - Resume) /Producer (ResumeMatch sample generator) >>
+endobj
+xref
+0 8
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000121 00000 n 
+0000000257 00000 n 
+0000000354 00000 n 
+0000000456 00000 n 
+0000001396 00000 n 
+trailer
+<< /Size 8 /Root 1 0 R /Info 7 0 R >>
+startxref
+1488
+%%EOF
