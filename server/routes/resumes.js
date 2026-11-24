@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { pool } from '../db.js';
 import { requireAuth } from '../middleware/requireAuth.js';
 import { validate, safeText, idParam } from '../validate.js';
+import { findFixedResult, unsupportedResumeMessage } from '../services/fixedResults.js';
 
 const router = Router();
 router.use(requireAuth); // every resume route needs login
@@ -25,6 +26,13 @@ const createSchema = z.object({
 // POST /api/resumes
 router.post('/', validate(createSchema), async (req, res) => {
   const { title, content_text, file_url } = req.valid.body;
+  // Only resumes with a fixed result can be analyzed, so don't save any others.
+  if (!findFixedResult(title)) {
+    return res.status(400).json({
+      error: unsupportedResumeMessage(),
+      details: [{ field: 'title', message: `${unsupportedResumeMessage()} The resume name must be one of them, for example Nour_Hassan.pdf.` }],
+    });
+  }
   const { rows } = await pool.query(
     `INSERT INTO resumes (user_id, title, content_text, file_url)
      VALUES ($1, $2, $3, $4)

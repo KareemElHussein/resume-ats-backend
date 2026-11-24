@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Create an account | ResumeMatch</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<nav class="nav" aria-label="Main">
+  <a class="brand" href="upload.html">Resume<span>Match</span></a>
+  <a class="link" href="upload.html">Upload</a>
+  <a class="link" href="results.html">Results</a>
+  <a class="link" href="resumes.html">My resumes</a>
+  <a class="link login" href="login.html">Log in</a>
+</nav>
+<main class="narrow">
+  <h1>Create an account</h1>
+  <p class="lead">Your resumes and results are saved to your account, and only you can see them.</p>
+  <form class="card" id="form" data-mode="register" novalidate>
+    <div class="live bad" id="form-error" role="alert"></div>
+    <label for="email" class="first">Email</label>
+    <input id="email" name="email" type="email" autocomplete="email" required aria-describedby="err-email">
+    <p class="error" id="err-email" hidden></p>
+    <label for="password">Password</label>
+    <p class="hint" id="password-hint">At least 8 characters.</p>
+    <input id="password" name="password" type="password" autocomplete="new-password" required aria-describedby="password-hint err-password">
+    <p class="error" id="err-password" hidden></p>
+    <label for="confirm">Repeat password</label>
+    <input id="confirm" name="confirm" type="password" autocomplete="new-password" required aria-describedby="err-confirm">
+    <p class="error" id="err-confirm" hidden></p>
+    <div class="actions"><button class="btn" id="submit" type="submit">Create account</button></div>
+  </form>
+  <p>Already have an account? <a id="switch" href="login.html">Log in</a></p>
+</main>
+<script type="module" src="js/auth.js"></script>
+</body>
+</html>

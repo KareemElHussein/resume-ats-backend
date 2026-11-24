@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Upload | ResumeMatch</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<nav class="nav" aria-label="Main">
+  <a class="brand" href="upload.html">Resume<span>Match</span></a>
+  <a class="link" href="upload.html" aria-current="page">Upload</a>
+  <a class="link" href="results.html">Results</a>
+  <a class="link" href="resumes.html">My resumes</a>
+  <a class="link login" href="login.html">Log in</a>
+</nav>
+<main>
+  <h1>Check your resume against a job</h1>
+  <p class="lead">Add your resume and paste the job description. You get a match score, the missing keywords and rewrite suggestions.</p>
+
+  <form class="card" id="form" novalidate>
+    <h2 class="first">1. Your resume</h2>
+
+    <div id="saved-field" hidden>
+      <label for="saved">Resume</label>
+      <select id="saved" name="saved">
+        <option value="">Add a new resume</option>
+      </select>
+    </div>
+
+    <div id="new-resume">
+      <label for="file">Resume file (PDF, DOCX or TXT)</label>
+      <p class="hint" id="file-hint">This demo has results for its sample resumes only. The text is read in your browser, and you can check it below.</p>
+      <input type="file" id="file" name="file" accept=".pdf,.docx,.txt" aria-describedby="file-hint err-file">
+      <p class="error" id="err-file" hidden></p>
+      <p class="hint status" id="file-status" role="status"></p>
+
+      <label for="resume_title">Resume name</label>
+      <input id="resume_title" name="resume_title" aria-describedby="err-resume_title">
+      <p class="error" id="err-resume_title" hidden></p>
+
+      <label for="content_text">Resume text</label>
+      <p class="hint" id="content-hint">Filled in from your file, or paste it here.</p>
+      <textarea id="content_text" name="content_text" aria-describedby="content-hint content_count err-content_text"></textarea>
+      <p class="count" id="content_count">0 / 20,000 characters</p>
+      <p class="error" id="err-content_text" hidden></p>
+    </div>
+
+    <h2>2. The job</h2>
+    <label for="job_title">Job title</label>
+    <input id="job_title" name="job_title" aria-describedby="err-job_title">
+    <p class="error" id="err-job_title" hidden></p>
+
+    <label for="company">Company (optional)</label>
+    <input id="company" name="company" autocomplete="organization" aria-describedby="err-company">
+    <p class="error" id="err-company" hidden></p>
+
+    <label for="description_text">Job description</label>
+    <textarea id="description_text" name="description_text" placeholder="Paste the full job description here." aria-describedby="err-description_text"></textarea>
+    <p class="error" id="err-description_text" hidden></p>
+
+    <div class="live bad" id="form-error" role="alert"></div>
+    <div class="live" id="progress" role="status"></div>
+
+    <div class="actions">
+      <button class="btn white" id="submit" type="submit">Analyze my resume</button>
+      <a class="btn ghost" href="resumes.html">My saved resumes</a>
+    </div>
+  </form>
+</main>
+<script type="module" src="js/upload.js"></script>
+</body>
+</html>

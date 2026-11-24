@@ -3,12 +3,10 @@ import { z } from 'zod';
 import { pool } from '../db.js';
 import { requireAuth } from '../middleware/requireAuth.js';
 import { validate, idParam } from '../validate.js';
-import { analyzeMatch } from '../services/ai.js';
+import { findFixedResult, unsupportedResumeMessage } from '../services/fixedResults.js';
 
 const router = Router();
 router.use(requireAuth);
-
-const DAILY_LIMIT = 20; // protects your AI bill
 
 const createSchema = z.object({
   resume_id: z.string().uuid('resume_id is not valid.'),
@@ -52,51 +50,26 @@ router.post('/', validate(createSchema), async (req, res) => {
 
   // Both must belong to the logged-in user.
   const [resume, job] = await Promise.all([
-    pool.query('SELECT title, content_text FROM resumes WHERE id = $1 AND user_id = $2', [resume_id, userId]),
-    pool.query(
-      'SELECT job_title, company, description_text FROM job_descriptions WHERE id = $1 AND user_id = $2',
-      [job_description_id, userId]
-    ),
+    pool.query('SELECT title FROM resumes WHERE id = $1 AND user_id = $2', [resume_id, userId]),
+    pool.query('SELECT id FROM job_descriptions WHERE id = $1 AND user_id = $2', [job_description_id, userId]),
   ]);
   if (!resume.rows[0]) return res.status(404).json({ error: 'Resume not found.' });
   if (!job.rows[0]) return res.status(404).json({ error: 'Job description not found.' });
 
-  const { rows: [{ count }] } = await pool.query(
-    `SELECT count(*)::int AS count FROM analyses
-     WHERE user_id = $1 AND created_at > now() - interval '24 hours'`,
-    [userId]
-  );
-  if (count >= DAILY_LIMIT) {
-    return res.status(429).json({ error: `Daily limit of ${DAILY_LIMIT} analyses reached. Try again tomorrow.` });
-  }
-
-  // Status starts as 'pending'.
-  const { rows: [analysis] } = await pool.query(
-    `INSERT INTO analyses (user_id, resume_id, job_description_id) VALUES ($1, $2, $3) RETURNING id`,
-    [userId, resume_id, job_description_id]
-  );
-
-  let result;
-  try {
-    result = await analyzeMatch({
-      resumeText: resume.rows[0].content_text,
-      jobTitle: job.rows[0].job_title,
-      company: job.rows[0].company,
-      jobText: job.rows[0].description_text,
-    });
-  } catch (err) {
-    console.error('AI analysis failed:', err.message);
-    await pool.query(`UPDATE analyses SET status = 'failed' WHERE id = $1`, [analysis.id]);
-    return res.status(502).json({
-      error: 'The AI service could not analyze this resume. Please try again.',
-      analysis_id: analysis.id,
-    });
-  }
+  // No AI: the result comes from server/data/fixedResults.js, looked up by the resume's name.
+  const result = findFixedResult(resume.rows[0].title);
+  if (!result) return res.status(422).json({ error: unsupportedResumeMessage() });
 
   // Save everything or nothing.
+  let analysis;
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
+    ({ rows: [analysis] } = await client.query(
+      `INSERT INTO analyses (user_id, resume_id, job_description_id, status, match_score)
+       VALUES ($1, $2, $3, 'completed', $4) RETURNING id`,
+      [userId, resume_id, job_description_id, result.match_score]
+    ));
     await client.query(
       `INSERT INTO keyword_gaps (analysis_id, keyword, category, importance)
        SELECT $1, * FROM unnest($2::text[], $3::text[], $4::int[])`,
@@ -117,14 +90,9 @@ router.post('/', validate(createSchema), async (req, res) => {
         result.rewrite_suggestions.map((s) => s.suggested_text),
       ]
     );
-    await client.query(`UPDATE analyses SET status = 'completed', match_score = $1 WHERE id = $2`, [
-      result.match_score,
-      analysis.id,
-    ]);
     await client.query('COMMIT');
   } catch (err) {
     await client.query('ROLLBACK').catch(() => {});
-    await pool.query(`UPDATE analyses SET status = 'failed' WHERE id = $1`, [analysis.id]);
     throw err;
   } finally {
     client.release();

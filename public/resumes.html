@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My resumes | ResumeMatch</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<nav class="nav" aria-label="Main">
+  <a class="brand" href="upload.html">Resume<span>Match</span></a>
+  <a class="link" href="upload.html">Upload</a>
+  <a class="link" href="results.html">Results</a>
+  <a class="link" href="resumes.html" aria-current="page">My resumes</a>
+  <a class="link login" href="login.html">Log in</a>
+</nav>
+<main>
+  <h1 id="heading" tabindex="-1">My saved resumes</h1>
+  <p class="lead" id="lead" aria-live="polite">Loading…</p>
+
+  <div id="list"></div>
+
+  <div class="card empty" id="empty" hidden>
+    <h3>No saved resumes yet</h3>
+    <p class="muted">Upload a resume to see your match score, missing keywords and rewrite suggestions.</p>
+    <div class="actions center"><a class="btn" href="upload.html">Upload your first resume</a></div>
+  </div>
+
+  <div class="actions" id="more" hidden><a class="btn" href="upload.html">Upload new resume</a></div>
+</main>
+<script type="module" src="js/resumes.js"></script>
+</body>
+</html>
