@@ -23,7 +23,7 @@ async function readPdf(data) {
   const pdfjs = await import('../vendor/pdf.min.js');
   pdfjs.GlobalWorkerOptions.workerSrc = new URL('../vendor/pdf.worker.min.js', import.meta.url).href;
 
-  const pdf = await pdfjs.getDocument({ data }).promise;
+  const pdf = await pdfjs.getDocument({ data: new Uint8Array(data) }).promise;
   try {
     const pages = [];
     for (let n = 1; n <= pdf.numPages; n++) {

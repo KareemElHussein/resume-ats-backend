@@ -95,7 +95,7 @@ fileInput.addEventListener('change', async () => {
     fileStatus.textContent = '';
     setFieldError('file', err instanceof ExtractError
       ? err.message
-      : `We couldn't read ${file.name}. Paste your resume text below instead.`);
+      : `We couldn't read ${file.name}. Paste your resume text below instead. (Details: ${err?.message || err})`);
   }
 });
 

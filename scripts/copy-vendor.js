@@ -8,9 +8,11 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const outDir = join(root, 'public', 'vendor');
 
 // [file inside node_modules, name in public/vendor]. Saved as .js so every server sends a JavaScript type.
+// pdf.js's default build supports only the newest Chrome and Firefox; the legacy build also covers
+// Edge, Safari 18+ and older Chrome, so the upload page uses that.
 const files = [
-  ['pdfjs-dist/build/pdf.min.mjs', 'pdf.min.js'],
-  ['pdfjs-dist/build/pdf.worker.min.mjs', 'pdf.worker.min.js'],
+  ['pdfjs-dist/legacy/build/pdf.min.mjs', 'pdf.min.js'],
+  ['pdfjs-dist/legacy/build/pdf.worker.min.mjs', 'pdf.worker.min.js'],
   ['mammoth/mammoth.browser.min.js', 'mammoth.browser.min.js'],
 ];
 
